@@ -7,11 +7,21 @@ output: html_document
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message=FALSE)
 ```
 
-## R Markdown
+# Airbnb listings analysis project
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+*by Océane Salmeron, Nathan Lancman, Charles Mabbyalas, Baptise Lafay (ING5, BDA 2)*
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+Airbnb data contains a lot of value.
+
+A real estate investor is looking forward to using this data in order to take a decision regarding the best option he has in real estate to generate profit on Airbnb from his investment.
+
+He downloaded the latest available data at a specific time about the following cities: 
+
+*   Malaga
+*   Mallorca
+*   Sevilla
+
+He's looking forward to answering the following questions:
 
 ```{r}
 library(dplyr)
@@ -19,6 +29,7 @@ library(stringr)
 library(ggplot2)
 library(data.table)
 library(tidyr)
+library(forcats)
 
 setwd("/Users/oceanesalmeron/Documents/Data Analytics/airbnb_listings_analysis")
 
@@ -47,106 +58,172 @@ for(city in cities){
     }
     files_paths <- c(files_paths, file_subdirs)
 }
+#calendars <-
+#    do.call(rbind,
+#            lapply(file.path(files_paths, "calendar.csv"), read.csv, row.names=1))
+
 files_paths <- file.path(files_paths, "listings.csv")
 listings <- 
     do.call(rbind,
             lapply(files_paths, read.csv, row.names=1))
 
+
+
 ## Preprocess
 listings$bedrooms <- ifelse(listings$bedrooms >= 5, "5+", listings$bedrooms)
 
 ```
-# Analysis 1
-### Find the "average availability over 30 days" of listings per each city.
+# Analysis 1 : Comparing Cities
+### 1)Find the "average availability over 30 days" of listings per each city.
 
 ```{r}
 avg_availability <- listings %>% 
                     group_by(city) %>%
                     summarise(avg = mean(availability_30))
 
-p <-ggplot(avg_availability, aes(x=city, y=avg))
-p + geom_bar(stat = "identity")
+p <-ggplot(avg_availability, aes(x=city, y=avg, fill=city))
+p + geom_bar(stat = "identity")+
+    ggtitle("Average availability over 30 days of listings per each city")+
+    ylab("Average availability over 30 days")+
+    xlab("City")+
+    guides(fill = FALSE) +
+    geom_text(aes(label=avg), vjust=1.6, color="white", size=3.5) +
+    scale_fill_brewer(palette = "Set2") +
+    theme(plot.title = element_text(hjust = 0.5))
+
 ```
 
-### Find the "average revenue of over 30 days" of listings per each city.
+### 2)Find the "average revenue of over 30 days" of listings per each city.
 
 ```{r}
 avg_revenue<- listings %>% 
               group_by(city) %>%
               summarise(avg = mean(revenue_30))
 
-p <-ggplot(avg_revenue, aes(x=city, y=avg))
-p + geom_bar(stat = "identity")
+p <-ggplot(avg_revenue, aes(x=city, y=avg, fill=city))
+p + geom_bar(stat = "identity")+
+    ggtitle("Average revenue over 30 days of listings per each city")+
+    ylab("Average revenue over 30 days")+
+    xlab("City")+
+    guides(fill = FALSE) +
+    geom_text(aes(label=avg), vjust=1.6, color="white", size=3.5) +
+    scale_fill_brewer(palette = "Set2") +
+    theme(plot.title = element_text(hjust = 0.5))
 ```
 
-### Compare the distribution of estimated availability for the next 30 days of listings per each city.
+### 3)Compare the distribution of estimated availability for the next 30 days of listings per each city.
 ```{r}
-p <- ggplot(listings, aes(city, availability_30))
-p + geom_boxplot(aes(colour = "red"), outlier.shape = NA) +
-    scale_y_continuous(limits = quantile(listings$availability_30, c(0.1, 0.9), na.rm = T))
+p <- ggplot(listings, aes(city, availability_30, colour=city))
+p + geom_boxplot(outlier.shape = NA) +
+    scale_y_continuous(limits = quantile(listings$availability_30, c(0.1, 0.9), na.rm = T)) +
+    scale_colour_brewer(palette="Set2") +
+    ggtitle("Distribution of estimated availability for the next 30 days of listings per each city")+
+    ylab("Average avalaibility over 30 days")+
+    xlab("City")+
+    guides(colour = FALSE) +
+    theme(plot.title = element_text(hjust = 0.5))
+
+
+    
 ```
 
-### Compare the distribution of estimated revenue for the next 30 days of listings per each city.
+### 4)Compare the distribution of estimated revenue for the next 30 days of listings per each city.
 ```{r}
-p <- ggplot(listings, aes(city, revenue_30))
-p + geom_boxplot(aes(colour =city), outlier.shape = NA) +
+p <- ggplot(listings, aes(city, revenue_30, colour=city))
+p + geom_boxplot(outlier.shape = NA) +
     scale_y_continuous(limits = quantile(listings$revenue_30, c(0.1, 0.9), na.rm = T))+
+    stat_summary(fun.y=mean, geom="point", shape=20, size=5, color="red", fill="red") +
+    scale_colour_brewer(palette="Set2") +
     ggtitle("Distribution of estimated revenue for the next 30 days of listings per each city")+
     ylab("Estimated revenue for the next 30 days")+
-    xlab("Cities")+
-    theme(legend.position="bottom")
+    xlab("City")+
+    guides(colour = FALSE) +
+    theme(plot.title = element_text(hjust = 0.5))
 ```
 
-### Compare the distribution of estimated revenue for the next 30 days of listings per each city & for each house size (# of bedrooms).
+### 5)Compare the distribution of estimated revenue for the next 30 days of listings per each city & for each house size (# of bedrooms).
 ```{r}
-p <- ggplot(listings, aes(bedrooms, revenue_30))
-p + geom_boxplot(aes(colour = city), outlier.shape = NA) +
+p <- ggplot(listings, aes(bedrooms, revenue_30, colour=city))
+p + geom_boxplot(outlier.shape = NA) +
     scale_y_continuous(limits = quantile(listings$revenue_30, c(0.1, 0.9), na.rm = T)) + 
-    facet_wrap(~ city,scale="free")
+    facet_wrap(~ city,scale="free") +
+    scale_colour_brewer(palette="Set2") +
+    ggtitle("Distribution of estimated revenue for the next 30 days of listings per each city & for each house size")+
+    ylab("Estimated revenue for the next 30 days")+
+    guides(colour = FALSE) +
+    theme(plot.title = element_text(hjust = 0.5))
+  
 ```
 
-### Une autre à faire
-
-
-## Analyse 2
-
-### What is the proportion of each room type?
+### 6)Compare the distribution of estimated revenue for the next 30 days of listings per each city & for each room type (room_type).
 
 ```{r}
-listings %>% 
-  group_by(city, room_type) %>%
-  summarise(avg = mean(revenue_30))
-
-p <- ggplot(listings, aes(city, fill=room_type))
-p + geom_bar(position = "fill")
+p <- ggplot(listings, aes(room_type, revenue_30, colour=city))
+p + geom_boxplot(outlier.shape = NA) +
+    scale_y_continuous(limits = quantile(listings$revenue_30, c(0.1, 0.9), na.rm = T)) + 
+    facet_wrap(~ city,ncol=3) +
+    coord_flip()+
+    scale_colour_brewer(palette="Set2") +
+    ggtitle("Distribution of estimated revenue for the next 30 days of listings per each city & for each room type")+
+    ylab("Estimated revenue for the next 30 days")+
+    xlab("Room type")+
+    guides(colour = FALSE) +
+    theme(plot.title = element_text(hjust = 0.5))
+  
 ```
 
-### What is the proportion of each house size (# of bedroom)?
+
+## Analyse 2 : Deep Dive in one City Analysis
+
+### 1)What is the proportion of each room type?
 
 ```{r}
-p <- ggplot(listings, aes(city, fill=bedrooms))
-p + geom_bar(position = "fill")
+
+p <- ggplot(listings, aes(city,fill=room_type))
+p + geom_bar(position ="fill") +
+    scale_fill_brewer(palette="Set2") +
+    ggtitle("Proportion of each room type by city")+
+    ylab("Count")+
+    xlab("City")+
+    labs(fill="Room type")+
+    theme(plot.title = element_text(hjust = 0.5))
+
 ```
 
-### What is the proportion of each neighborhood?
+### 2)hat is the proportion of each house size (# of bedroom)?
 
 ```{r}
-p <- ggplot(listings%>% top_n(20), aes(neighbourhood_cleansed))
-p + geom_bar(stat="count")+ 
-    facet_wrap(~city, nrow=3)+
-    coord_flip()
-
-ggp <- ggplot(listings%>% top_n(20),aes(neighbourhood_cleansed)) + 
-    geom_bar(fill="Red") +
-    coord_flip()+ 
-    facet_wrap(~city, ncol=3)
-
-library(plotly) #required package.
-ggp %>% ggplotly # then check in the viewer
+listings%>%
+  filter(!is.na(bedrooms))%>%
+  ggplot(aes(city, fill=bedrooms))+
+  geom_bar(position = "fill")+
+  scale_fill_brewer(palette="Set2") +
+  ggtitle("Proportion of each house size by city")+
+  ylab("Count")+
+  xlab("City")+
+  labs(fill="Number of bedroom")+
+  theme(plot.title = element_text(hjust = 0.5))
 
 ```
 
-### What is the average availability over the next 30 days for each room type / house size / neighborhood?
+### 3)What is the proportion of each neighborhood?
+
+```{r}
+listings%>%
+  top_n(20)%>%
+  ggplot(aes(neighbourhood_cleansed)) + 
+  geom_bar(fill="lightgreen") +
+  coord_flip()+ 
+  facet_wrap(~city, ncol=3)+
+  ggtitle("Proportion of each neighborhood by city")+
+  ylab("Count")+
+  xlab("Neighborhood")+
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+### 4)What is the average availability over the next 30 days for each room type / house size / neighborhood?
+
+#### 4.1)Room type
 ```{r}
 avg_availability_room <- listings %>% 
                     group_by(city,room_type) %>%
@@ -154,32 +231,57 @@ avg_availability_room <- listings %>%
 
 p <- ggplot(avg_availability_room, aes(fill=room_type, y=avg, x=room_type)) 
 p + geom_bar(position="dodge", stat="identity")+
-  facet_wrap(~city)
+  facet_wrap(~city)+
+  scale_fill_brewer(palette="Set2") +
+  ggtitle("Average availability over the next 30 days for each room type by city")+
+  ylab("Availability over the next 30 days")+
+  xlab("")+
+  labs(fill="Room type")+
+  theme(plot.title = element_text(hjust = 0.5), axis.text.x = element_blank(),axis.ticks = element_blank())
 ```
+
+#### 4.2)House size
 
 ```{r}
 avg_availability_bedrooms <- listings %>% 
-                    group_by(city,bedrooms) %>%
-                    summarise(avg = mean(availability_30))
+                              filter(!is.na(bedrooms))%>%
+                              group_by(city,bedrooms) %>%
+                              summarise(avg = mean(availability_30))
 
 p <- ggplot(avg_availability_bedrooms, aes(fill=bedrooms, y=avg, x=bedrooms)) 
 p + geom_bar(position="dodge", stat="identity")+
-  facet_wrap(~city)
+  facet_wrap(~city)+
+  scale_fill_brewer(palette="Set2") +
+  ggtitle("Average availability over the next 30 days for each house size by city")+
+  ylab("Availability over the next 30 days")+
+  xlab("")+
+  labs(fill="Number of bedroom")+
+  theme(plot.title = element_text(hjust = 0.5), axis.text.x = element_blank(),axis.ticks = element_blank())
 
 ```
 
+#### 4.3)Neighbourhood
 
 ```{r}
 avg_availability_neigh <- listings %>% 
+                    top_n(20)%>%
                     group_by(city,neighbourhood_cleansed) %>%
                     summarise(avg = mean(availability_30))
 
-p <- ggplot(avg_availability_neigh%>% top_n(10), aes(fill=neighbourhood_cleansed, y=avg, x=neighbourhood_cleansed)) 
+p <- ggplot(avg_availability_neigh, aes(fill="red", y=avg, x=neighbourhood_cleansed)) 
 p + geom_bar(position="dodge", stat="identity")+
-  facet_wrap(~city)
+  facet_wrap(~city)+
+  coord_flip()+ 
+  ggtitle("Average availability over the next 30 days for each neighbourhood by city")+
+  ylab("Availability over the next 30 days")+
+  xlab("Neighbourhood")+
+  guides(fill=FALSE)+
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
-### What is the average revenue over the next 30 days for each room type / house size / neighborhood?
+### 5)What is the average revenue over the next 30 days for each room type / house size / neighborhood?
+
+#### 5.1)Room type
 ```{r}
 avg_revenue_room <- listings %>% 
                     group_by(city,room_type) %>%
@@ -187,74 +289,152 @@ avg_revenue_room <- listings %>%
 
 p <- ggplot(avg_revenue_room, aes(fill=room_type, y=avg, x=room_type)) 
 p + geom_bar(position="dodge", stat="identity")+
-  facet_wrap(~city)
+  facet_wrap(~city)+
+  scale_fill_brewer(palette="Set2") +
+  ggtitle("Average revenue over the next 30 days for each room type by city")+
+  ylab("Revenue over the next 30 days")+
+  xlab("")+
+  labs(fill="Room type")+
+  theme(plot.title = element_text(hjust = 0.5), axis.text.x = element_blank(),axis.ticks = element_blank())
 ```
 
+
+#### 5.2)House size
 ```{r}
 avg_revenue_bedrooms <- listings %>% 
+                    filter(!is.na(bedrooms))%>%
                     group_by(city,bedrooms) %>%
                     summarise(avg = mean(revenue_30))
 
 p <- ggplot(avg_revenue_bedrooms, aes(fill=bedrooms, y=avg, x=bedrooms)) 
 p + geom_bar(position="dodge", stat="identity")+
-  facet_wrap(~city)
+  facet_wrap(~city)+
+  scale_fill_brewer(palette="Set2") +
+  ggtitle("Average revenue over the next 30 days for each house size by city")+
+  ylab("Revenue over the next 30 days")+
+  xlab("")+
+  labs(fill="Number of bedroom")+
+  theme(plot.title = element_text(hjust = 0.5), axis.text.x = element_blank(),axis.ticks = element_blank())
 ```
 
+
+#### 5.3)Neighbourhood
 ```{r}
 avg_revenue_neigh <- listings %>% 
+                    top_n(20)%>%
                     group_by(city,neighbourhood_cleansed) %>%
                     summarise(avg = mean(revenue_30))
 
-p <- ggplot(avg_revenue_neigh%>% top_n(10), aes(fill=neighbourhood_cleansed, y=avg, x=neighbourhood_cleansed)) 
+p <- ggplot(avg_revenue_neigh, aes(fill="red", y=avg, x=neighbourhood_cleansed)) 
 p + geom_bar(position="dodge", stat="identity")+
-  facet_wrap(~city)
+  facet_wrap(~city)+
+  coord_flip()+ 
+  ggtitle("Average revenue over the next 30 days for each neighbourhood by city")+
+  ylab("Revenue over the next 30 days")+
+  xlab("Neighbourhood")+
+  guides(fill=FALSE)+
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
-### What is the distribution of availability over the next 30 days for each room type / house size / neighborhood?
+### 6)What is the distribution of availability over the next 30 days for each room type / house size / neighborhood?
 
+#### 6.1)Room type
 ```{r}
 p <- ggplot(listings, aes(room_type, availability_30))
 p + geom_boxplot(aes(colour = city), outlier.shape = NA) +
     scale_y_continuous(limits = quantile(listings$availability_30, c(0.1, 0.9), na.rm = T)) + 
-    facet_wrap(~ city,scale="free")
+    facet_wrap(~ city,ncol=3)+
+    coord_flip()+ 
+    scale_colour_brewer(palette="Set2") +
+    ggtitle("Distribution of availability over the next 30 days for each room type by city")+
+    ylab("Estimated availability for the next 30 days")+
+    xlab("Room type")+
+    guides(colour = FALSE) +
+    theme(plot.title = element_text(hjust = 0.5))
 ```
 
+#### 6.2)House size
 ```{r}
-p <- ggplot(listings, aes(bedrooms, availability_30))
-p + geom_boxplot(aes(colour = city), outlier.shape = NA) +
-    scale_y_continuous(limits = quantile(listings$availability_30, c(0.1, 0.9), na.rm = T)) + 
-    facet_wrap(~ city,scale="free")
+listings%>% filter(!is.na(bedrooms))%>%
+          ggplot(aes(bedrooms, availability_30)) +
+          geom_boxplot(aes(colour = city), outlier.shape = NA) +
+          scale_y_continuous(limits = quantile(listings$availability_30, c(0.1, 0.9), na.rm = T)) + 
+          facet_wrap(~ city,scale="free")+
+          scale_colour_brewer(palette="Set2") +
+          ggtitle("Distribution of availability over the next 30 days for house size type by city")+
+          ylab("Estimated availability for the next 30 days")+
+          xlab("House size")+
+          guides(colour = FALSE) +
+          theme(plot.title = element_text(hjust = 0.5))
 ```
 
+
+#### 6.3)Neighbourhood
 ```{r}
-p <- ggplot(listings, aes(neighbourhood_cleansed, availability_30))
-p + geom_boxplot(aes(colour = city), outlier.shape = NA) +
-    scale_y_continuous(limits = quantile(listings$availability_30, c(0.1, 0.9), na.rm = T)) + 
-    facet_wrap(~ city,scale="free")
+listings%>%top_n(20)%>%
+             ggplot(aes(neighbourhood_cleansed, availability_30))+
+             geom_boxplot(aes(colour = city), outlier.shape = NA) +
+             scale_y_continuous(limits = quantile(listings$availability_30, c(0.1, 0.9), na.rm = T)) + 
+             facet_wrap(~ city,ncol=3)+
+             coord_flip()+ 
+             scale_colour_brewer(palette="Set2") +
+             ggtitle("Distribution of availability over the next 30 days for each neighbourhood by city")+
+             ylab("Estimated availability for the next 30 days")+
+             xlab("Neighbourhood")+
+             guides(colour = FALSE) +
+             theme(plot.title = element_text(hjust = 0.5))
+  
+
 ```
 
 
-### What is the distribution of revenue over the next 30 days for each room type / house size / neighborhood?
+### 7)What is the distribution of revenue over the next 30 days for each room type / house size / neighborhood?
+
+### 7.1)Room type
 
 ```{r}
 p <- ggplot(listings, aes(room_type, revenue_30))
 p + geom_boxplot(aes(colour = city), outlier.shape = NA) +
     scale_y_continuous(limits = quantile(listings$revenue_30, c(0.1, 0.9), na.rm = T)) + 
-    facet_wrap(~ city,scale="free")
+    facet_wrap(~ city,ncol=3)+
+    coord_flip()+ 
+    scale_colour_brewer(palette="Set2") +
+    ggtitle("Distribution of revenue over the next 30 days for each room type by city")+
+    ylab("Estimated revenue for the next 30 days")+
+    xlab("Room type")+
+    guides(colour = FALSE) +
+    theme(plot.title = element_text(hjust = 0.5))
 ```
 
+#### 7.2)House size
 ```{r}
-p <- ggplot(listings, aes(bedrooms, revenue_30))
-p + geom_boxplot(aes(colour = city), outlier.shape = NA) +
-    scale_y_continuous(limits = quantile(listings$revenue_30, c(0.1, 0.9), na.rm = T)) + 
-    facet_wrap(~ city,scale="free")
+listings%>% filter(!is.na(bedrooms))%>%
+          ggplot(aes(bedrooms, revenue_30)) +
+          geom_boxplot(aes(colour = city), outlier.shape = NA) +
+          scale_y_continuous(limits = quantile(listings$revenue_30, c(0.1, 0.9), na.rm = T)) + 
+          facet_wrap(~ city,scale="free")+
+          scale_colour_brewer(palette="Set2") +
+          ggtitle("Distribution of revenue over the next 30 days for house size type by city")+
+          ylab("Estimated revenue for the next 30 days")+
+          xlab("House size")+
+          guides(colour = FALSE) +
+          theme(plot.title = element_text(hjust = 0.5))
 ```
 
+
+#### 7.3)Neighbourhood
 ```{r}
 p <- ggplot(listings, aes(neighbourhood_cleansed, revenue_30))
 p + geom_boxplot(aes(colour = city), outlier.shape = NA) +
     scale_y_continuous(limits = quantile(listings$revenue_30, c(0.1, 0.9), na.rm = T)) + 
-    facet_wrap(~ city,scale="free")
+    facet_wrap(~ city,ncol=3)+
+    coord_flip()+
+    scale_colour_brewer(palette="Set2") +
+    ggtitle("Distribution of revenue over the next 30 days for each neighbourhood by city")+
+    ylab("Estimated revenue for the next 30 days")+
+    xlab("Neighbourhood")+
+    guides(colour = FALSE) +
+    theme(plot.title = element_text(hjust = 0.5))
 ```
 
 

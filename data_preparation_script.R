@@ -89,6 +89,7 @@ prepare_data <- function(city, data_date)
     dir.create(file.path("data_cleansed", city, data_date), recursive = TRUE)
     
     write.csv(listings_cleansed, file.path("data_cleansed", city, data_date, "listings.csv"))
+    write.csv(calendar,file.path("data_cleansed", city, data_date, "calendar.csv"))
     print(paste0("saving data into ", file.path("data_cleansed", city, data_date, "listings.csv")))
     
 }  
