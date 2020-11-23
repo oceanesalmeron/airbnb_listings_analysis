@@ -53,7 +53,7 @@ files_paths <- c()
 
 # Read data in cities between min_date and max_date
 for(city in cities){
-    file_dir <- file.path(".", "data_cleansed", city)
+    file_dir <- file.path(".", "App/Data/data_cleansed", city)
     file_subdirs <- list.dirs(file_dir)
     file_subdirs <- file_subdirs[-1]
     
@@ -76,6 +76,8 @@ listings <-
 
 ## Preprocess
 listings$bedrooms <- ifelse(listings$bedrooms >= 5, "5+", listings$bedrooms)
+
+files_paths
 ```
 # Analysis 1 : Comparing Cities
 ### 1)Find the "average availability over 30 days" of listings per each city.
