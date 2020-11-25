@@ -107,22 +107,54 @@ prepare_country_data <- function(url, country, city, data_date){
 
 }
 
-file_dir <- file.path(".", "Data/all_data.csv")
-df <- read.csv(file_dir)
-df <- df %>%
-  filter(country %in% c("germany", "the-netherlands", "portugal")) %>%
-  group_by(city) %>%
-  slice_head(n=3)
-
-
-for (row in 1:nrow(df)) {
-  prepare_country_data(as.character(df[row,]$listings_url), as.character(df[row,]$country), as.character(df[row,]$city), as.Date(df[row,]$data_date))
-  print(paste0("done for ",df[row,]$data_date ))
-  print(row)
+process_data <-function(){
+  file_dir <- file.path(".", "Data/all_data.csv")
+  df <- read.csv(file_dir)
+  df <- df %>%
+    filter(country %in% c("germany", "the-netherlands", "portugal")) %>%
+    group_by(city) %>%
+    slice_head(n=3)
+  
+  
+  for (row in 1:nrow(df)) {
+    prepare_country_data(as.character(df[row,]$listings_url), as.character(df[row,]$country), as.character(df[row,]$city), as.Date(df[row,]$data_date))
+    print(paste0("done for ",df[row,]$data_date ))
+    print(row)
+  }
+  
+  # Clean Environment
+  rm(list=ls())
 }
 
-# Clean Environment
-rm(list=ls())
+read_data <-function(){
+  countries <- c("the-netherlands", "portugal", "germany")
+  
+  files_paths <- c()
+  
+  # Read data in cities between min_date and max_date
+  for(country in countries){
+    file_dir <- file.path(".", "Data/data_cleansed", country)
+    file_dir_cities <- list.dirs(file_dir, full.names = TRUE, recursive = FALSE)
+    
+    for(file_dir_city in file_dir_cities){
+      file_dir_dates <- list.dirs(file_dir_city, full.names = TRUE, recursive = FALSE)
+      files_paths <- c(files_paths, file_dir_dates)
+    }
+    
+  }
+  files_paths <- file.path(files_paths, "listings.csv")
+  
+  listings <- 
+    do.call(rbind,
+            lapply(files_paths, read.csv, row.names=1))
+  ## Preprocess
+  listings$bedrooms <- ifelse(listings$bedrooms >= 5, "5+", listings$bedrooms)
+  
+  return(listings)
+}
+
+listings<-read_data()
+
 
 
 
