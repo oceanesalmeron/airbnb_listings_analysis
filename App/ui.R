@@ -1,24 +1,95 @@
 library(shiny)
+library(shinythemes)
+library(ggplot2)
+library(leaflet)
 
+tab1 <- sidebarLayout(
+          sidebarPanel(
+            class="control",
+            #Control Widget
+            checkboxGroupInput(
+              inputId = "input_1",
+              label = "Choose cities",
+              choices = unique(listings$city),
+              selected = "lisbon"
+            ),
+            selectInput(
+              inputId = "features",
+              label = "Features",
+              choices = c("Availability", "Revenue", "Price")
+            ),
+            selectInput(
+              inputId = "Dim",
+              label = "Dim",
+              choices = c("None", "House type", "Number of beds", "Neighborhood")
+            ),
+            selectInput(
+              inputId = "grap_type",
+              label = "Plot type",
+              choices = c("Average", "Distribution", "Density", "Histogram")
+            )
+          ),
+          mainPanel(
+            h3("Comparing cities"),
+            wellPanel(
+              textOutput("cities"),
+              textOutput("plot_type"),
+              textOutput("plot_title"),
+              plotOutput("plot1", click = "plot_click")
+            )
+            
+          )
+        )
+
+
+tab2 <- sidebarLayout(
+          sidebarPanel(
+            class="control",
+            #Control Widget
+            selectInput(
+              inputId = "cities_t2",
+              label = "Choose a city",
+              choices = unique(listings$city),
+              selected = "lisbon"
+            )
+          ),
+          mainPanel(
+            h3("Deep dive into one city"),
+            fluidRow(
+              class="insights",
+              column(4, class="row-sm-4 h-100 card", paste('listings'), textOutput("total_listing")),
+              column(4, class="card", paste('avg price'))
+            ),
+            wellPanel(
+              leafletOutput("city_map")
+              
+            )
+            
+          )
+        )
+  
+  
+  
+  
+  
 # Define UI for application that draws a histogram
-shinyUI(fluidPage(
-  
+shinyUI(fluidPage(#theme = "bootstrap.css",
+  includeCSS("www/bootstrap.css"),
   # Application title
-  titlePanel("AirBnB listings analysis"),
   
-  # Sidebar with a slider input for number of bins 
-  sidebarLayout(
-    sidebarPanel(
-      h1("Move the slider!"),
-      sliderInput("slider1", "Slide Me!", 0, 100, 0)
+  # Grid Layout
+  fluidRow(
+    wellPanel(
+      class="title-bar",
+      img(src='logo-white.png', id="logo"),
+      titlePanel("AirBnB listings analysis")
+      )
     ),
-    
-    # Show a plot of the generated distribution
-    mainPanel(
-      h3("Slider value: "),
-      textOutput("text")
-      
-      #plotOutput("distPlot")
-    )
-  )
+  tabsetPanel(type = "tabs",
+              tabPanel("Analysis 1", tab1),
+              tabPanel("Analysis 2", tab2)
+              )
+  
+  
+  
 ))
