@@ -83,11 +83,12 @@ h1{
 .card{
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+  justify-content: space-evenly;
   align-items: flex-start;
   border-left: 4px solid #FF5A5F;
   margin: 4rem 0;
   padding: 1rem;
+  min-height: 8rem;
 }
 
 .card p{
