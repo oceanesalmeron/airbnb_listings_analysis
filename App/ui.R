@@ -56,13 +56,14 @@ tab2 <- sidebarLayout(
           mainPanel(
             h3("Deep dive into one city"),
             fluidRow(
-              class="insights",
-              column(4, class="row-sm-4 h-100 card", paste('listings'), textOutput("total_listing")),
-              column(4, class="card", paste('avg price'))
+              class="insights w-100",
+              column(4, class="row-sm-4 h-100 card", p('Number of listings'), textOutput("total_listing")%>%tagAppendAttributes(class = 'res')),
+              column(4, class="card", p('Average price'), textOutput("avg_price")%>%tagAppendAttributes(class = 'res'))
             ),
             wellPanel(
-              leafletOutput("city_map")
-              
+              id="body-panel",
+              tags$div(class="section-title",h3("Map")),
+              tags$div(class="marg",leafletOutput("city_map"))
             )
             
           )

@@ -22,13 +22,37 @@ h1{
 }
 
 
-.well{
+.well, .card{
   background-color: #fff;
-  border: 1px solid #E3E6EF;
-  border-top: 4px solid #FF5A5F;
+  border: 2px solid #E3E6EF;
   border-radius: 10px;
   box-shadow: 0px 18px 40px #E3E6EF;
   
+}
+
+.well{
+  border-top: 4px solid #FF5A5F;
+}
+
+#body-panel{
+  padding:0;
+  border: 2px solid #E3E6EF;
+}
+
+#body-panel .section-title{
+  border-bottom: 2px solid #E3E6EF;
+  padding: 1.5rem 2rem;
+  background-color: #F8F9FC;
+}
+
+#body-panel .section-title h3{
+  margin:0;
+  font-weight: bold;
+  color: #FF5A5F;
+}
+
+.marg{
+  padding: 1.5rem;
 }
 
 .title-bar{
@@ -52,7 +76,7 @@ h1{
 .insights{
   display: flex;
   flex-direction: row;
-  justify-content: flex-start;
+  justify-content: space-between;
   align-items: center;
 }
 
@@ -60,10 +84,23 @@ h1{
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  align-items: center;
-  background-color: #FF5A5F;
-  color: #fff;
-  border-radius: 10px;
+  align-items: flex-start;
+  border-left: 4px solid #FF5A5F;
+  margin: 4rem 0;
+  padding: 1rem;
+}
+
+.card p{
+  color: #FF5A5F;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-block-end: 0;
+  font-size: 1rem;
+}
+
+.card .res{
+  font-weight: bold;
+  font-size: 1.5rem;
 }
 
 

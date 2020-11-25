@@ -118,10 +118,21 @@ shinyServer(function(input, output) {
     
   })
   
+  #Tab2
   choosen_city <- reactive({
     listings %>% 
-      filter(city == input$cities_t2) %>%
-      group_by(city)
+      filter(city == input$cities_t2)
+  })
+  
+  output$total_listing <- renderText({
+    total <- count(choosen_city())$n
+  })
+  
+  output$avg_price <- renderText({
+    df <- choosen_city()%>%
+                  summarise(avg = mean(price))
+    
+    avg_price<-df$avg
   })
   
   output$city_map <- renderLeaflet({
@@ -131,7 +142,6 @@ shinyServer(function(input, output) {
           addMarkers(clusterOptions = markerClusterOptions(),
                      popup = paste(choosen_city()$price)
                      )
-    
   })
   
   
