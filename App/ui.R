@@ -23,8 +23,14 @@ tab1 <- sidebarLayout(
               label = "Dim",
               choices = c("None", "House type", "Number of beds", "Neighborhood")
             ),
-            uiOutput("date_slider"),
-            
+            #uiOutput("date_slider"),
+            dateRangeInput("date_range", "Select the:",
+                           start = (listings%>%summarise(min = min(as.Date(date)), max = max(as.Date(date))))$min,
+                           end = (listings%>%summarise(min = min(as.Date(date)), max = max(as.Date(date))))$max, 
+                           min = (listings%>%summarise(min = min(as.Date(date)), max = max(as.Date(date))))$min,
+                           max = (listings%>%summarise(min = min(as.Date(date)), max = max(as.Date(date))))$max,
+                           format = "yyyy-mm-dd"
+                      ),
             selectInput(
               inputId = "grap_type",
               label = "Plot type",
@@ -53,7 +59,8 @@ tab2 <- sidebarLayout(
               label = "Choose a city",
               choices = unique(listings$city),
               selected = "lisbon"
-            )
+            ),
+            
           ),
           mainPanel(
             h3("Deep dive into one city"),
@@ -66,6 +73,11 @@ tab2 <- sidebarLayout(
               id="body-panel",
               tags$div(class="section-title",h3("Map")),
               tags$div(class="marg",leafletOutput("city_map"))
+            ),
+            wellPanel(
+              id="body-panel",
+              tags$div(class="section-title",h3("Insights")),
+              tags$div(class="marg",plotOutput("plot2"))
             )
             
           )

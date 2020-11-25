@@ -2,6 +2,8 @@ library(shiny)
 library(ggplot2)
 library(leaflet)
 
+source('../Scripts/plot_data.R')
+
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
   
@@ -30,14 +32,15 @@ shinyServer(function(input, output) {
   
   choosen_cities <- reactive({
     listings %>% 
-      filter(city %in% str_split(input$input_1," ")) %>%
+      filter(city %in% str_split(input$input_1," "),
+             as.Date(date) <= input$date_range[2],
+             as.Date(date) >= input$date_range[1]) %>%
       group_by(city)
   })
   
   output$date_slider <- renderUI({
     
-    dates <- listings%>%
-              summarise(min = min(as.Date(date)), max = max(as.Date(date)))
+    dates <- listings%>%summarise(min = min(as.Date(date)), max = max(as.Date(date)))
     min_date <- dates$min
     max_date <- dates$max
     
@@ -86,6 +89,16 @@ shinyServer(function(input, output) {
     
     features <- select_features()
     
+    # if(input$grap_type == "Average"){
+    #   data <- average()
+    # }
+    # else{
+    #   data <- choosen_cities()
+    # }
+    # 
+    # plot_data(data, features, input$grap_type)
+
+    
     if(input$grap_type == "Average"){
       p <-ggplot(average(), aes(x=city, y=avg, fill=city))
       p + geom_bar(stat = "identity")+
@@ -95,42 +108,44 @@ shinyServer(function(input, output) {
         geom_text(aes(label=avg), vjust=1.6, color="white", size=3.5) +
         scale_fill_brewer(palette = "Set2")
     }
-    
+
     else if(input$grap_type == "Distribution"){
       p <-ggplot(choosen_cities(), aes(x=features[[2]], y=features[[1]], colour=city))+
         scale_y_continuous(limits = quantile(features[[1]], c(0.1, 0.9), na.rm = T))+
         scale_colour_brewer(palette="Set2")
-      
+
       p + geom_boxplot(outlier.shape = NA) +
         facet_wrap(~ city,scale="free")  +
         ylab("Estimated revenue for the next 30 days")+
-        guides(colour = FALSE) 
+        guides(colour = FALSE)
     }
-    
+
     else if(input$grap_type == "Histogram"){
-      #graph <- choosen_cities() %>% 
+      #graph <- choosen_cities() %>%
        # gather(city, features[[1]])
-      
+
       #ggplot(graph, aes(x = features[[1]], fill = city)) +
        # geom_histogram(binwidth = 0.5, color = "black")
     }
-    
+
     else if(input$grap_type == "Density"){
-      
+
       if(input$Dim == "None"){
         choosen_cities() %>%
           ggplot( aes(x=features[[1]])) +
           geom_density(fill="#69b3a2", color="#e9ecef", alpha=0.8) +
-          scale_x_continuous(limits = quantile(features[[1]], c(0.1, 0.9), na.rm = T)) 
+          facet_wrap(~ city,scale="free")  +
+          scale_x_continuous(limits = quantile(features[[1]], c(0.1, 0.9), na.rm = T))
       }
       else{
         choosen_cities() %>%
           ggplot( aes(x=features[[1]], fill=features[[2]])) +
           geom_density(color="#e9ecef",alpha=0.8) +
           scale_fill_brewer(palette="Set2")+
-          scale_x_continuous(limits = quantile(features[[1]], c(0.1, 0.9), na.rm = T)) 
+          facet_wrap(~ city,scale="free")  +
+          scale_x_continuous(limits = quantile(features[[1]], c(0.1, 0.9), na.rm = T))
       }
-      
+
     }
     
   })
