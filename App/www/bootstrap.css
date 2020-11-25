@@ -21,6 +21,22 @@ h1{
   height: 10rem;
 }
 
+.row{
+  margin: 0;
+}
+
+.row::before, .row::after{
+  display: none;
+  content: none;
+}
+
+.row .no-padding{
+  display: flex;
+}
+
+.row.no-padding .col-sm-4, .row.no-padding.col-sm-8 {
+  padding: 0;
+}
 
 .well, .card{
   background-color: #fff;
@@ -78,6 +94,10 @@ h1{
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
+}
+
+.insights.plot .well{
+  width: 49%;
 }
 
 .card{
