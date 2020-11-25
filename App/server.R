@@ -34,6 +34,23 @@ shinyServer(function(input, output) {
       group_by(city)
   })
   
+  output$date_slider <- renderUI({
+    
+    dates <- listings%>%
+              summarise(min = min(as.Date(date)), max = max(as.Date(date)))
+    min_date <- dates$min
+    max_date <- dates$max
+    
+    dateRangeInput("date", "Select the date range:",
+                   start = min_date,
+                   end = max_date, 
+                   min = min_date,
+                   max =max_date,
+                   format = "yyyy-mm-dd")
+    
+    
+  })
+  
   average <- reactive({
     choosen_cities() %>%
       summarise(avg = mean(switch(input$features,

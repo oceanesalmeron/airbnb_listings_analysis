@@ -23,6 +23,8 @@ tab1 <- sidebarLayout(
               label = "Dim",
               choices = c("None", "House type", "Number of beds", "Neighborhood")
             ),
+            uiOutput("date_slider"),
+            
             selectInput(
               inputId = "grap_type",
               label = "Plot type",
