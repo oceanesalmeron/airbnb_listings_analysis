@@ -5,7 +5,7 @@ library(leaflet)
 source('../Scripts/plot_data.R')
 
 # Define server logic required to draw a histogram
-shinyServer(function(input, output) {
+shinyServer(function(input, output, session) {
   
   output$cities <- renderText({
     paste("Cities selected : ", paste(input$input_1, collapse = ", "))
@@ -77,10 +77,6 @@ shinyServer(function(input, output) {
                                 "Neighborhood" = choosen_cities()$neighbourhood_cleansed)
     
     res <- list(feature,additional_feature)
-    
-    # p <-ggplot(choosen_cities(), aes(x=additional_feature, y=feature, colour=city))+
-    #   scale_y_continuous(limits = quantile(feature, c(0.1, 0.9), na.rm = T))+
-    #   scale_colour_brewer(palette="Set2")
 
   }))
 
@@ -153,8 +149,25 @@ shinyServer(function(input, output) {
   #Tab2
   choosen_city <- reactive({
     listings %>% 
-      filter(city == input$cities_t2)
+      filter(city == input$cities_t2)%>%
+      distinct(id, .keep_all = TRUE)
+      
   })
+  
+  observeEvent(input$cities_t2,{
+    updateSelectInput(session, "date_city", choices = unique(choosen_city()$date), selected = choosen_city()$date[1])
+    updateSelectInput(session, "housing", choices=unique(choosen_city()$room_type), selected = choosen_city()$room_type[1])
+    updateSliderInput(session, "availability_slider", max=max(choosen_city()$availability_30), value= c(0,max(choosen_city()$availability_30)))
+    #updateSliderInput(session, "price_slider", max=max(choosen_city()$price), value= c(0,max(choosen_city()$price/100)))
+  })
+  
+  output$try<- renderText({
+    paste(input$price_slider[1])
+  })
+  
+  output$dive_city <- renderText(
+    paste(input$cities_t2)
+  )
   
   output$total_listing <- renderText({
     total <- count(choosen_city())$n
@@ -167,13 +180,40 @@ shinyServer(function(input, output) {
     avg_price<-df$avg
   })
   
+  choosen_options <- reactive({
+    data <- choosen_city()%>%
+              filter(date == input$date_city,
+                     room_type == input$housing,
+                     availability_30 <= input$availability_slider,
+                     price <= input$price_slider[2],
+                     price >= input$price_slider[1])
+  })
+  
   output$city_map <- renderLeaflet({
-    map<-choosen_city()%>%
+    map<-choosen_options()%>%
           leaflet() %>% 
           addTiles()%>%
           addMarkers(clusterOptions = markerClusterOptions(),
-                     popup = paste(choosen_city()$price)
+                     popup = paste(choosen_options()$price)
                      )
+  })
+  
+  output$plot2 <- renderPlot({
+    p <- ggplot(choosen_options(), aes(city,fill=room_type))
+    p + geom_bar(position ="fill", width=1, color="white") +
+      coord_polar("y", start=0)+
+      scale_fill_brewer(palette="Set2") +
+      labs(fill="Room type")+
+      theme_void()
+  })
+  
+  output$nb_beds <- renderPlot({
+    p <- ggplot(choosen_options(), aes(city,fill=bedrooms))
+    p + geom_bar(position ="fill", width=1, color="white") +
+      coord_polar("y", start=0)+
+      scale_fill_brewer(palette="Set2") +
+      labs(fill="Nb of beds")+
+      theme_void()
   })
   
   
