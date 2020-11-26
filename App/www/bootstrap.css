@@ -12,13 +12,16 @@ body {
   color: #5A5C68;
 }
 
-
 h1{
   margin: 0;
 }
 
+h3{
+  padding-left: 15px;
+}
+
 #logo{
-  height: 10rem;
+  height: 5rem;
 }
 
 .row{
@@ -84,10 +87,7 @@ h1{
   
 }
 
-.selectize-input, .full{
-  border: none;
-  background-color: #FF5A5F;
-}
+
 
 .insights{
   display: flex;
@@ -124,6 +124,60 @@ h1{
   font-size: 1.5rem;
 }
 
+.insights-dive{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.well.w-100{
+  width:100%;
+}
+
+.controller{
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+}
+
+.form-group.shiny-input-container {
+    width: 49%;
+    margin:0;
+}
+
+.plot-group{
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  padding: 0;
+  width: 100%;
+}
+
+.plot-group #body-panel,.panel-plot{
+  width: 47%;
+}
+
+.container-fluid:nth-child(1){
+  padding:0;
+}
+
+.navbar-default{
+  background-color: #FF5A5F;
+  color: #fff;
+  padding: 1rem 2rem;
+}
+
+.navbar-default .navbar-brand, .navbar-default .navbar-nav>li>a{
+  color: #fff;
+}
+
+.navbar-default .navbar-nav>.active>a, .navbar-default .navbar-nav>.active>a:focus, .navbar-default .navbar-nav>.active>a:hover{
+  background-color: transparent;
+  font-weight: bold;
+  color: #fff;
+}
 
 
 
