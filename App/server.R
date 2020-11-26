@@ -157,8 +157,8 @@ shinyServer(function(input, output, session) {
   observeEvent(input$cities_t2,{
     updateSelectInput(session, "date_city", choices = unique(choosen_city()$date), selected = choosen_city()$date[1])
     updateSelectInput(session, "housing", choices=unique(choosen_city()$room_type), selected = choosen_city()$room_type[1])
+    updateSelectInput(session, "nb_bed", choices=sort(unique(choosen_city()$beds[choosen_city()$beds!=0])), selected = choosen_city()$beds[1])
     updateSliderInput(session, "availability_slider", max=max(choosen_city()$availability_30), value= c(0,max(choosen_city()$availability_30)))
-    #updateSliderInput(session, "price_slider", max=max(choosen_city()$price), value= c(0,max(choosen_city()$price/100)))
   })
   
   output$try<- renderText({
@@ -166,40 +166,83 @@ shinyServer(function(input, output, session) {
   })
   
   output$dive_city <- renderText(
-    paste(input$cities_t2)
+    paste0(input$cities_t2)
   )
-  
-  output$total_listing <- renderText({
-    total <- count(choosen_city())$n
-  })
-  
-  output$avg_price <- renderText({
-    df <- choosen_city()%>%
-                  summarise(avg = mean(price))
-    
-    avg_price<-df$avg
-  })
   
   choosen_options <- reactive({
     data <- choosen_city()%>%
               filter(date == input$date_city,
                      room_type == input$housing,
+                     beds == input$nb_bed,
                      availability_30 <= input$availability_slider,
                      price <= input$price_slider[2],
                      price >= input$price_slider[1])
   })
   
+  output$total_listing <- renderText({
+    total <- count(choosen_options())$n
+  })
+  
+  output$avg_price <- renderText({
+    df <- choosen_options()%>%
+      summarise(avg = mean(price))
+    
+    avg_price<-df$avg
+  })
+  
+  output$median <- renderText({
+    df <- choosen_options()%>%
+      summarise(median = median(price))
+    
+    avg_price<-df$median
+  })
+  
   output$city_map <- renderLeaflet({
+    
     map<-choosen_options()%>%
           leaflet() %>% 
           addTiles()%>%
           addMarkers(clusterOptions = markerClusterOptions(),
-                     popup = paste(choosen_options()$price)
+                     popup = paste0("Details <br> Type: ",choosen_options()$room_type,
+                                   "  -  Beds:",
+                                   choosen_options()$beds,
+                                   '<br>',choosen_options()$price,'$',
+                                   '<br><a href="https://www.airbnb.com/rooms/',
+                                   choosen_options()$id,
+                                   '">Go to ad!</a>')
                      )
   })
   
-  output$plot2 <- renderPlot({
-    p <- ggplot(choosen_options(), aes(city,fill=room_type))
+  select_features_tab2 <- reactive({
+    if(input$tab2_ft == "Neighborhood"){
+      data <- choosen_city()%>%sample_n(size=20)
+    }else{
+      data <- choosen_city()
+    }
+    
+    feature <- switch(input$tab2_ft,
+                      "House type" = data$room_type,
+                      "Number of beds" = data$bedrooms,
+                      "Neighborhood" = as.character(data$neighbourhood_cleansed))
+    
+    additional_feature <- switch(input$tab2_dim,
+                                 "None"=data$city,
+                                 "Availability" = data$availability_30,
+                                 "Revenue" = data$revenue_30,
+                                 "Price" = data$price)
+    
+    features <- list(feature, additional_feature)
+  })
+  
+  output$plot_pro <- renderPlot({
+  
+    if(input$tab2_ft == "Neighborhood"){
+      data <- choosen_city()%>%sample_n(size=20)
+    }else{
+      data <- choosen_city()
+    }
+    features <- select_features_tab2()
+    p <-ggplot(data, aes(x=city, fill=features[[1]]))
     p + geom_bar(position ="fill", width=1, color="white") +
       coord_polar("y", start=0)+
       scale_fill_brewer(palette="Set2") +
@@ -207,13 +250,55 @@ shinyServer(function(input, output, session) {
       theme_void()
   })
   
-  output$nb_beds <- renderPlot({
-    p <- ggplot(choosen_options(), aes(city,fill=bedrooms))
-    p + geom_bar(position ="fill", width=1, color="white") +
-      coord_polar("y", start=0)+
-      scale_fill_brewer(palette="Set2") +
-      labs(fill="Nb of beds")+
-      theme_void()
+  
+  
+  output$plot_den <- renderPlot({
+    if(input$tab2_ft == "Neighborhood"){
+      data <- choosen_city()%>%sample_n(size=20)
+    }else{
+      data <- choosen_city()
+    }
+    features <- select_features_tab2()
+    data %>%
+      ggplot( aes(x=features[[2]], fill=features[[1]])) +
+      geom_density(color="#e9ecef",alpha=0.8) +
+      scale_fill_brewer(palette="Set2")+
+      facet_wrap(~ city,scale="free")  +
+      scale_x_continuous(limits = quantile(features[[2]], c(0.1, 0.9), na.rm = T))
+  })
+  
+  output$plot_avg <- renderPlot({
+    if(input$tab2_ft == "Neighborhood"){
+      data <- choosen_city()%>%sample_n(size=20)
+    }else{
+      data <- choosen_city()
+    }
+    features <- select_features_tab2()
+    avg_data <- data %>% 
+      group_by(city,features[[1]]) %>%
+      summarise(avg = mean((switch(input$tab2_dim,
+                                   "Availability" = availability_30,
+                                   "Revenue" = revenue_30,
+                                   "Price" = price))))
+    
+    p <- ggplot(avg_data, aes(fill=features[[1]], y=avg, x=features[[1]])) 
+    p + geom_bar(position="dodge", stat="identity")+
+      scale_fill_brewer(palette="Set2") 
+  })
+  
+  output$plot_dis <- renderPlot({
+    if(input$tab2_ft == "Neighborhood"){
+      data <- choosen_city()%>%sample_n(size=20)
+    }else{
+      data <- choosen_city()
+    }
+    features <- select_features_tab2()
+    p <-ggplot(data, aes(x=features[[1]], y=features[[2]], colour=features[[1]]))+
+      scale_y_continuous(limits = quantile(features[[2]], c(0.1, 0.9), na.rm = T))+
+      scale_colour_brewer(palette="Set2")
+    
+    p + geom_boxplot(outlier.shape = NA) +
+      guides(colour = FALSE)
   })
   
   

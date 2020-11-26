@@ -4,6 +4,7 @@ library(ggplot2)
 library(leaflet)
 
 tab1 <- sidebarLayout(
+          
           sidebarPanel(
             class="control",
             #Control Widget
@@ -11,7 +12,7 @@ tab1 <- sidebarLayout(
               inputId = "input_1",
               label = "Choose cities",
               choices = unique(listings$city),
-              selected = "lisbon"
+              selected = c("lisbon","amsterdam")
             ),
             selectInput(
               inputId = "features",
@@ -38,10 +39,7 @@ tab1 <- sidebarLayout(
             )
           ),
           mainPanel(
-            h3("Comparing cities"),
             wellPanel(
-              textOutput("cities"),
-              textOutput("plot_type"),
               textOutput("plot_title"),
               plotOutput("plot1", click = "plot_click")
             )
@@ -55,15 +53,15 @@ map <- sidebarLayout(
             class="control",
             #Control Widget
             selectInput(
-              inputId = "cities_t2",
-              label = "Select city:",
-              choices = unique(listings$city),
-              selected = "lisbon"
-            ),
-            selectInput(
               inputId = "housing",
               label = "Select housing type:",
               choices = c("Loading"),
+              selected = ""
+            ),
+            selectInput(
+              inputId = "nb_bed",
+              label = "Select number of beds:",
+              choices = c(),
               selected = ""
             ),
             sliderInput(
@@ -82,11 +80,6 @@ map <- sidebarLayout(
               max = max(listings$availability_30),
               value = c(0,max(listings$availability_30)),
               round = TRUE
-            ),
-            selectInput(
-              inputId = "date_city",
-              label = "Select dates",
-              choices = c()
             )
             #uiOutput("date_city")
           ),
@@ -99,30 +92,72 @@ map <- sidebarLayout(
           )
         )
 
-insight<- sidebarLayout(
-            sidebarPanel(
+insight<- fluidRow(
+            class="insights-dive",
+            wellPanel(
+              class="w-100 controller",
               selectInput(
-                inputId = "yoooo",
+                inputId = "tab2_ft",
                 label = "Pick a feature",
-                choices = unique(listings$city),
-                selected = "lisbon"
+                choices = c("House type", "Number of beds", "Neighborhood"),
+                selected = "House type"
+              ),
+              selectInput(
+                inputId = "tab2_dim",
+                label = "Add a dimension",
+                choices = c("Availability", "Revenue", "Price")
               )
             ),
             mainPanel(
+              class="plot-group",
               wellPanel(
+                class="panel-plot",
                 id="body-panel",
-                tags$div(class="section-title",h3("Proportion of house type")),
-                tags$div(class="marg",plotOutput("plot2"))
+                tags$div(class="section-title",h3("Proportion")),
+                tags$div(class="marg",plotOutput("plot_pro"))
+              ),
+              wellPanel(
+                class="panel-plot",
+                id="body-panel",
+                tags$div(class="section-title",h3("Distribution")),
+                tags$div(class="marg",plotOutput("plot_dis"))
+              ),
+              wellPanel(
+                class="panel-plot",
+                id="body-panel",
+                tags$div(class="section-title",h3("Density")),
+                tags$div(class="marg",plotOutput("plot_den"))
+              ),
+              wellPanel(
+                class="panel-plot",
+                id="body-panel",
+                tags$div(class="section-title",h3("Average")),
+                tags$div(class="marg",plotOutput("plot_avg"))
               )
             )
         )
   
 tab2<- fluidRow(
           h3("Deep dive into one city - ",textOutput("dive_city")),
+          wellPanel(
+            class="controller",
+            selectInput(
+              inputId = "cities_t2",
+              label = "Select city:",
+              choices = unique(listings$city),
+              selected = "lisbon"
+            ),
+            selectInput(
+              inputId = "date_city",
+              label = "Select dates",
+              choices = c()
+            )
+          ),
           fluidRow(
             class="insights w-100",
-            column(4, class="row-sm-4 h-100 card", p('Number of listings'), textOutput("total_listing")%>%tagAppendAttributes(class = 'res')),
-            column(4, class="card", p('Average price'), textOutput("avg_price")%>%tagAppendAttributes(class = 'res'))
+            column(3, class="row-sm-4 h-100 card", p('Number of listings'), textOutput("total_listing")%>%tagAppendAttributes(class = 'res')),
+            column(3, class="card", p('Average price'), textOutput("avg_price")%>%tagAppendAttributes(class = 'res')),
+            column(3, class="card", p('Median price'), textOutput("median")%>%tagAppendAttributes(class = 'res'))
           ),
           map%>%tagAppendAttributes(class = "no-padding"),
           insight%>%tagAppendAttributes(class = "no-padding")
@@ -131,26 +166,12 @@ tab2<- fluidRow(
   
   
 # Define UI for application that draws a histogram
-shinyUI(fluidPage(#theme = "bootstrap.css",
+shinyUI(fluidPage(
   includeCSS("www/bootstrap.css"),
-  # Application title
-  navbarPage("AirBnB listings analysis",
-             tabPanel("Analysis 1", tab1),
-             tabPanel("Analysis 2", tab2)
+
+  navbarPage(title=div(img(src='logo-white.png', id="logo"), "AirBnB listings analysis"),
+             tabPanel("Analysis 1", h3("Comparing cities"),tab1),
+             tabPanel("Analysis 2", tab2),
+             selected = "Analysis 1"
   )
-  # Grid Layout
-  # fluidRow(
-  #   wellPanel(
-  #     class="title-bar",
-  #     img(src='logo-white.png', id="logo"),
-  #     titlePanel("AirBnB listings analysis")
-  #     )
-  #   ),
-  # tabsetPanel(type = "tabs",
-  #             tabPanel("Analysis 1", tab1),
-  #             tabPanel("Analysis 2", tab2)
-  #             )
-  
-  
-  
 ))
