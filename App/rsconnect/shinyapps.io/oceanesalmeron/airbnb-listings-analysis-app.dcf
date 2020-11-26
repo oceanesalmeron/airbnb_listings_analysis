@@ -1,0 +1,12 @@
+name: airbnb-listings-analysis-app
+title:
+username:
+account: oceanesalmeron
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3304068
+bundleId: 3908946
+url: https://oceanesalmeron.shinyapps.io/airbnb-listings-analysis-app/
+when: 1606395152.88061
+asMultiple: FALSE
+asStatic: FALSE
