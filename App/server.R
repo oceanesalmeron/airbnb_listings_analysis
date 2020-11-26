@@ -2,8 +2,6 @@ library(shiny)
 library(ggplot2)
 library(leaflet)
 
-source('../Scripts/plot_data.R')
-
 # Define server logic required to draw a histogram
 shinyServer(function(input, output, session) {
   
@@ -55,7 +53,24 @@ shinyServer(function(input, output, session) {
   })
   
   average <- reactive({
-    choosen_cities() %>%
+    data <- choosen_cities() %>%
+              group_by(city)
+      
+    if(input$Dim == "House type"){
+      data <- choosen_cities() %>%
+        group_by(city, room_type)
+    }
+    else if(input$Dim == "House size"){
+      data <- choosen_cities() %>%
+        group_by(city, bedrooms)
+    }
+    else if(input$Dim == "Neighborhood"){
+      data <- choosen_cities() %>%
+        sample_n(size=20)%>%
+        group_by(city, neighbourhood_cleansed)
+    }
+    
+    data %>%
       summarise(avg = mean(switch(input$features,
                                   "Availability" = availability_30,
                                   "Revenue" = revenue_30,
@@ -73,7 +88,7 @@ shinyServer(function(input, output, session) {
     additional_feature <- switch(input$Dim,
                                 "None"=choosen_cities()$city,
                                 "House type" = choosen_cities()$room_type,
-                                "Number of beds" = choosen_cities()$bedrooms,
+                                "House size" = choosen_cities()$bedrooms,
                                 "Neighborhood" = choosen_cities()$neighbourhood_cleansed)
     
     res <- list(feature,additional_feature)
@@ -84,25 +99,32 @@ shinyServer(function(input, output, session) {
   output$plot1 <- renderPlot({
     
     features <- select_features()
-    
-    # if(input$grap_type == "Average"){
-    #   data <- average()
-    # }
-    # else{
-    #   data <- choosen_cities()
-    # }
-    # 
-    # plot_data(data, features, input$grap_type)
 
-    
     if(input$grap_type == "Average"){
-      p <-ggplot(average(), aes(x=city, y=avg, fill=city))
-      p + geom_bar(stat = "identity")+
-        ylab(paste(input$grap_type,input$features))+
-        xlab("City")+
-        guides(fill = FALSE) +
-        geom_text(aes(label=avg), vjust=1.6, color="white", size=3.5) +
-        scale_fill_brewer(palette = "Set2")
+      if(input$Dim == "None"){
+        p <-ggplot(average(), aes(x=city, y=avg, fill=city))
+        p + geom_bar(stat = "identity")+
+          ylab(paste(input$grap_type,input$features))+
+          xlab("City")+
+          guides(fill = FALSE) +
+          geom_text(aes(label=avg), vjust=1.6, color="white", size=3.5) +
+          scale_fill_brewer(palette = "Set2")
+      }
+      else{
+        avg_data <- average()
+        avg_ft <- switch(input$Dim,
+                                     "House type" = average()$room_type,
+                                     "House size" = average()$bedrooms,
+                                     "Neighborhood" = average()$neighbourhood_cleansed)
+        
+        p <-ggplot(average(), aes(x=avg_ft, y=avg, fill=avg_ft))
+        p + geom_bar(stat = "identity")+
+          ylab(paste(input$grap_type,input$features))+
+          xlab("City")+
+          facet_wrap(~city, ncol=2)+
+          guides(fill = FALSE) +
+          scale_fill_brewer(palette = "Set2")
+      }
     }
 
     else if(input$grap_type == "Distribution"){
@@ -111,17 +133,32 @@ shinyServer(function(input, output, session) {
         scale_colour_brewer(palette="Set2")
 
       p + geom_boxplot(outlier.shape = NA) +
-        facet_wrap(~ city,scale="free")  +
-        ylab("Estimated revenue for the next 30 days")+
+        facet_wrap(~ city, ncol=2)  +
+        ylab(paste("Estimated", input$features, "for the next 30 days"))+
+        xlab("Feature")+
         guides(colour = FALSE)
     }
 
     else if(input$grap_type == "Histogram"){
-      #graph <- choosen_cities() %>%
-       # gather(city, features[[1]])
 
-      #ggplot(graph, aes(x = features[[1]], fill = city)) +
-       # geom_histogram(binwidth = 0.5, color = "black")
+      if(input$Dim == "None"){
+        choosen_cities() %>%
+          ggplot( aes(x=features[[1]])) +
+          geom_histogram(fill="#69b3a2", color="#e9ecef", alpha=0.8) +
+          facet_wrap(~ city, ncol=2) + 
+          xlab(input$features)+
+          scale_x_continuous(limits = quantile(features[[1]], c(0.1, 0.9), na.rm = T))
+      }
+      else{
+        choosen_cities() %>%
+          ggplot( aes(x=features[[1]], fill=features[[2]])) +
+          geom_histogram(color="#e9ecef",alpha=0.8) +
+          scale_fill_brewer(palette="Set2")+
+          facet_wrap(~ city, ncol=2) + 
+          xlab(input$features)+
+          labs(fill=input$Dim)+
+          scale_x_continuous(limits = quantile(features[[1]], c(0.1, 0.9), na.rm = T))
+      }
     }
 
     else if(input$grap_type == "Density"){
@@ -130,7 +167,8 @@ shinyServer(function(input, output, session) {
         choosen_cities() %>%
           ggplot( aes(x=features[[1]])) +
           geom_density(fill="#69b3a2", color="#e9ecef", alpha=0.8) +
-          facet_wrap(~ city,scale="free")  +
+          facet_wrap(~ city, ncol=2)  +
+          xlab(input$features)+
           scale_x_continuous(limits = quantile(features[[1]], c(0.1, 0.9), na.rm = T))
       }
       else{
@@ -139,6 +177,8 @@ shinyServer(function(input, output, session) {
           geom_density(color="#e9ecef",alpha=0.8) +
           scale_fill_brewer(palette="Set2")+
           facet_wrap(~ city,scale="free")  +
+          xlab(input$features)+
+          labs(fill=input$Dim)+
           scale_x_continuous(limits = quantile(features[[1]], c(0.1, 0.9), na.rm = T))
       }
 
@@ -222,7 +262,7 @@ shinyServer(function(input, output, session) {
     
     feature <- switch(input$tab2_ft,
                       "House type" = data$room_type,
-                      "Number of beds" = data$bedrooms,
+                      "House size" = data$bedrooms,
                       "Neighborhood" = as.character(data$neighbourhood_cleansed))
     
     additional_feature <- switch(input$tab2_dim,
@@ -246,7 +286,7 @@ shinyServer(function(input, output, session) {
     p + geom_bar(position ="fill", width=1, color="white") +
       coord_polar("y", start=0)+
       scale_fill_brewer(palette="Set2") +
-      labs(fill="Room type")+
+      labs(fill=input$tab2_ft)+
       theme_void()
   })
   
@@ -264,6 +304,8 @@ shinyServer(function(input, output, session) {
       geom_density(color="#e9ecef",alpha=0.8) +
       scale_fill_brewer(palette="Set2")+
       facet_wrap(~ city,scale="free")  +
+      xlab(input$tab2_dim)+
+      labs(fill=input$tab2_ft)+
       scale_x_continuous(limits = quantile(features[[2]], c(0.1, 0.9), na.rm = T))
   })
   
@@ -273,17 +315,38 @@ shinyServer(function(input, output, session) {
     }else{
       data <- choosen_city()
     }
-    features <- select_features_tab2()
-    avg_data <- data %>% 
-      group_by(city,features[[1]]) %>%
-      summarise(avg = mean((switch(input$tab2_dim,
-                                   "Availability" = availability_30,
-                                   "Revenue" = revenue_30,
-                                   "Price" = price))))
+  
     
-    p <- ggplot(avg_data, aes(fill=features[[1]], y=avg, x=features[[1]])) 
+    if(input$tab2_ft == "House type"){
+      data <- choosen_cities() %>%
+        group_by(city, room_type)
+    }
+    else if(input$tab2_ft == "House size"){
+      data <- choosen_cities() %>%
+        group_by(city, bedrooms)
+    }
+    else if(input$tab2_ft == "Neighborhood"){
+      data <- choosen_cities() %>%
+        sample_n(size=20)%>%
+        group_by(city, neighbourhood_cleansed)
+    }
+    
+    data <- data %>%
+      summarise(avg = mean(switch(input$tab2_dim,
+                                  "Availability" = availability_30,
+                                  "Revenue" = revenue_30,
+                                  "Price" = price)))
+    
+    ft_avg <- switch(input$tab2_ft,
+                        "House type" = data$room_type,
+                        "House size" = data$bedrooms,
+                        "Neighborhood" = as.character(data$neighbourhood_cleansed))
+    
+    p <- ggplot(data, aes(fill=ft_avg, y=avg, x=ft_avg)) 
     p + geom_bar(position="dodge", stat="identity")+
-      scale_fill_brewer(palette="Set2") 
+      scale_fill_brewer(palette="Set2") +
+      xlab(input$tab2_ft)+
+      labs(fill=input$tab2_ft)
   })
   
   output$plot_dis <- renderPlot({
@@ -298,6 +361,8 @@ shinyServer(function(input, output, session) {
       scale_colour_brewer(palette="Set2")
     
     p + geom_boxplot(outlier.shape = NA) +
+      xlab(input$tab2_ft)+
+      ylab(input$tab2_dim)+
       guides(colour = FALSE)
   })
   

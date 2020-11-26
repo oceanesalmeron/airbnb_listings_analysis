@@ -22,7 +22,7 @@ tab1 <- sidebarLayout(
             selectInput(
               inputId = "Dim",
               label = "Dim",
-              choices = c("None", "House type", "Number of beds", "Neighborhood")
+              choices = c("None", "House type", "House size", "Neighborhood")
             ),
             #uiOutput("date_slider"),
             dateRangeInput("date_range", "Select the:",
@@ -99,7 +99,7 @@ insight<- fluidRow(
               selectInput(
                 inputId = "tab2_ft",
                 label = "Pick a feature",
-                choices = c("House type", "Number of beds", "Neighborhood"),
+                choices = c("House type", "House size", "Neighborhood"),
                 selected = "House type"
               ),
               selectInput(
@@ -163,6 +163,32 @@ tab2<- fluidRow(
           insight%>%tagAppendAttributes(class = "no-padding")
   )
   
+tab3<-wellPanel(
+  tags$h1("Airbnb listings analysis project"),
+  tags$p("By Océane Salmeron, Nathan Lancman, Charles Mabbyalas, Baptise Lafay (ING5, BDA 2)"),
+  tags$h3("Project"),
+  tags$p("This is the listings analysis project for the Data Analytics course at ECE Paris."),
+  tags$p("This project allows you to visualize Airbnb Data for those five cities :"),
+  tags$li("Amsterdam"),
+  tags$li("Berlin"),
+  tags$li("Munich"),
+  tags$li("Lisbon"),
+  tags$li("Porto"),
+  tags$p("You can access the project here : link"),
+  tags$a(href=""),
+  tags$h3("Data"),
+  tags$p("Airbnb data was provided by insideAirbnb.com"),
+  tags$h2("Installation"),
+  tags$h3("Requirement"),
+  tags$p("Dplyr, ggplot2, shiny are required libraries."),
+  tags$h2("Install libraries"),
+  tags$p("Run in your console: "),
+  tags$li("`install.packages('dplyr')`"),
+  tags$li("`install.packages('ggplot2')`"),
+  tags$li("`install.packages('shiny')`"),
+  tags$h3("Clone repository"),
+  tags$p("To clone the repo run `https://github.com/oceanesalmeron/airbnb_listings_analysis.git` in your terminal"),
+)
   
   
 # Define UI for application that draws a histogram
@@ -172,6 +198,7 @@ shinyUI(fluidPage(
   navbarPage(title=div(img(src='logo-white.png', id="logo"), "AirBnB listings analysis"),
              tabPanel("Analysis 1", h3("Comparing cities"),tab1),
              tabPanel("Analysis 2", tab2),
+             tabPanel("Documentation", tab3),
              selected = "Analysis 1"
   )
 ))
